@@ -5,7 +5,7 @@
 ## 📃 MYSHELL
 
 + 타겟의 웹 브라우저 상에서 파일 업로드, 코드 인젝션 등의 공격을 수행할 수 있는 웹쉘 스크립트 작성하기
-+ [MYSHELL README.md](https://github.com/gleaming0/ToyProject)
++ [MYSHELL README.md](https://github.com/gleaming0/ToyProject/blob/main/myshell/README.md)
 
 ## 👀 PONIC
 
