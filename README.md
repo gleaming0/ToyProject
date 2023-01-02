@@ -11,3 +11,9 @@
 
 + 타겟의 포트 스캔 및 해당 서비스 별 공격 수행하는 파이썬 스크립트 작성하기
 + [PONIC README.md](https://github.com/gleaming0/ToyProject/blob/main/ponic/README.md)
+
+## 🌐 DVWA
+
++ DVWA 실습에 필요한 파이썬 스크립트 작성하기
++ insecure website 구축 및 DVWA Impossible의 동작 과정 확인하기
++ [DVWA README.md](https://github.com/gleaming0/ToyProject/blob/main/dvwa/README.md)
