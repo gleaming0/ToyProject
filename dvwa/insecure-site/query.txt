@@ -1,5 +1,5 @@
-create database pentest;
-use pentest;
+create database gleaming;
+use gleaming;
 create table members(
 idx int not null auto_increment,
 id varchar(30),

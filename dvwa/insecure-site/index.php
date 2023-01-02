@@ -1,4 +1,4 @@
-<?
+<?php
   @session_start();
   include_once("./common.php");
   $page = $_GET["page"];
@@ -31,14 +31,14 @@
 
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>::CREHACKTIVE INSECURE WEB-SITE ::</title>
+    <title>CREHACKTIVE with AHEUN</title>
 
     <!-- Bootstrap core CSS -->
     <link href="./css/bootstrap.min.css" rel="stylesheet">
@@ -51,25 +51,25 @@
 
     <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom box-shadow">
       <span data-feather="box"></span>&nbsp;&nbsp;
-      <h5 class="my-0 mr-md-auto font-weight-normal">CREATIVE INSECURE WEB-SITE</h5>
+      <h5 class="my-0 mr-md-auto font-weight-normal">2022_산대특 AHEUN INSECURE WEB-SITE</h5>
       <nav class="my-2 my-md-0 mr-md-3">
         <a class="p-2 text-dark" href="index.php">Home</a>
-        <? if(empty($_SESSION["id"])) { ?>
+        <?php if(empty($_SESSION["id"])) { ?>
         <a class="p-2 text-dark" href="index.php?page=login">Login</a>
         <a class="p-2 text-dark" href="index.php?page=join">Join</a>
-        <? } else { ?>
+        <?php } else { ?>
         <a class="p-2 text-dark" href="index.php?page=mypage&id=<?=$_SESSION["id"]?>">MyPage</a>
-        <? if($_SESSION["id"] == "admin") { ?>
+        <?php if($_SESSION["id"] == "admin") { ?>
         <a class="p-2 text-dark" href="index.php?page=pingcheck">Ping Check</a>
         <a class="p-2 text-dark" href="index.php?page=xmlparser">XML Parser</a>
-        <? } ?>
+        <?php } ?>
         <a class="p-2 text-dark" href="logout.php">Logout</a>
-        <? } ?>
+        <?php } ?>
       </nav>
     </div>
 
     <div class="container">
-    <? include $page; ?>
+    <?php include $page; ?>
     </div>
     
     <!-- Icons -->

@@ -6,9 +6,9 @@
 
 	function mysql_conn() {
 		$host = "127.0.0.1";
-		$id = "root";
-		$pw = "crehacktive";
-		$db = "pentest";
+		$id = "gleaming";
+		$pw = "123456";
+		$db = "gleaming";
 	
 		$db_conn = new mysqli($host, $id, $pw, $db);
 

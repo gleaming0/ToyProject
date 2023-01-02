@@ -1,4 +1,4 @@
-<?
+<?php
   include_once("./common.php");
   $ip = $_POST["ip"];
   $page = $_SERVER['REQUEST_URI'];
@@ -14,7 +14,7 @@
       <hr>
     </div>
     <div class="container">
-		<form action="<?=$page?>" method="POST">
+		<form action="<?php=$page?>" method="POST">
 		  <div class="form-group">
 			<label>Ping</label>
 			<input type="text" class="form-control" name="ip" placeholder="IP(ex: 192.168.0.100) Input">
@@ -24,7 +24,7 @@
 			</div>
 		</form>
 	</div>
-	<? if(!empty($result)) { ?>
+	<?php if(!empty($result)) { ?>
 	<hr>
-	<?=$result?>
-	<? } ?>
+	<?php=$result?>
+	<?php } ?>

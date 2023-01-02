@@ -1,4 +1,4 @@
-<?
+<?php
 	include_once("./common.php");
 
 	$db_conn = mysql_conn();
@@ -38,14 +38,14 @@
     </div>
     
     <div class="container">
-		<form action="<?=$page?>" method="POST">
+		<form action="<?php=$page?>" method="POST">
 			<div class="form-group ">
 				<label>Password</label>
 				<input type="password" class="form-control " name="password" placeholder="Password Input">
 			</div>
 			<div class="text-center">
-				<input type="hidden" name="idx" value="<?=$idx?>">
-				<input type="hidden" name="mode" value="<?=$mode?>">
+				<input type="hidden" name="idx" value="<?php=$idx?>">
+				<input type="hidden" name="mode" value="<?php=$mode?>">
 				<button type="submit" class="btn btn-outline-info">Auth</button>
 				<button type="button" class="btn btn-outline-danger" onclick="history.back(-1);">Back</button>
 			</div>
@@ -73,6 +73,6 @@
     </script>
   </body>
 </html>
-<?
+<?php
 	$db_conn->close();
 ?>
