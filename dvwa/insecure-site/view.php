@@ -26,32 +26,32 @@
 		  <tbody>
 			<tr>
 			  <th scope="row" width="20%" class="text-center">Title</th>
-			  <td><?php=$row["title"]?></td>
+			  <td><?=$row["title"]?></td>
 			</tr>
 			<tr>
 			  <th scope="row" width="20%" class="text-center">Writer</th>
-			  <td><?php=$row["writer"]?></td>
+			  <td><?=$row["writer"]?></td>
 			</tr>
 			<tr>
 			  <th scope="row" width="20%" class="text-center">Date</th>
-			  <td><?php=$row["regdate"]?></td>
+			  <td><?=$row["regdate"]?></td>
 			</tr>
 			<tr>
 			  <th scope="row" width="20%" class="text-center">Contents</th>
-			  <td><?php=$row["content"]?></td>
+			  <td><?=$row["content"]?></td>
 			</tr>
 			<?php if(!empty($row["file"])) { ?>
 			<tr>
 			  <th scope="row" width="20%" class="text-center">File</th>
-			  <td><a href="download.php?file=<?php=$row["file"]?>"><?php=$row["file"]?></a></td>
+			  <td><a href="download.php?file=<?=$row["file"]?>"><?=$row["file"]?></a></td>
 			</tr>
 			<?php } ?>
 		  </tbody>
 		</table>
 		<div class="text-right">
 			<?php if($_SESSION["id"] == $row["id"]) { ?>
-			<button type="button" class="btn btn-outline-secondary" onclick="location.href='index.php?page=modify&idx=<?php=$row["idx"]?>'">Modify</button>
-			<button type="button" class="btn btn-outline-danger" onclick="location.href='index.php?page=auth&mode=delete&idx=<?php=$row["idx"]?>'">Delete</button>
+			<button type="button" class="btn btn-outline-secondary" onclick="location.href='index.php?page=modify&idx=<?=$row["idx"]?>'">Modify</button>
+			<button type="button" class="btn btn-outline-danger" onclick="location.href='index.php?page=auth&mode=delete&idx=<?=$row["idx"]?>'">Delete</button>
 			<?php } ?>
 			<button type="button" class="btn btn-outline-warning" onclick="location.href='index.php'">List</button>
 		</div>

@@ -14,7 +14,7 @@
       <hr>
     </div>
     <div class="container">
-		<form action="<?php=$page?>" method="POST">
+		<form action="<?=$page?>" method="POST">
 		  <div class="form-group">
 			<label>Ping</label>
 			<input type="text" class="form-control" name="ip" placeholder="IP(ex: 192.168.0.100) Input">
@@ -26,5 +26,5 @@
 	</div>
 	<?php if(!empty($result)) { ?>
 	<hr>
-	<?php=$result?>
+	<?=$result?>
 	<?php } ?>
