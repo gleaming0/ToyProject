@@ -1,0 +1,693 @@
+<?php
+// ****************************************************************
+//  LICENSE 
+// ****************************************************************
+// Copyright (C) 1999  Jung jinho Seraphino
+// http: //phpschool.com
+// Email : loveme@ditco.com
+//  
+// 이 프로그램은 GNU 센스를
+// GNU General Public License Version 2 를 따릅니다.
+//  
+// 본 라이센스가 소스 상단에 첨부되어 있는 한 
+// 소스의 자유로운 사용 ,수정 , 재배포가 가능합니다.
+//
+// 본 소스자체의 상업적 이용은 금지되어 있으며
+// 이 프로그램의 사용으로 인한  어떠한 피해에도 제작자는 책임이 없음을 
+// 알려드립니다.
+// 
+// *****************************************************************
+?>
+
+
+
+
+<HTML>
+<HEAD>
+<TITLE>Loveme's Free  Board Admin TOOL</TITLE>
+
+<meta HTTP-EQUIV=Content-Type content=text/html; charset=euc-kr>
+<STYLE TYPE='text/css'>
+<!--
+td	{ font-family:굴림체,굴림;font-size:10pt}
+a:link	{ font-family:굴림,굴림체; font-size:10pt;color:#003355; text-decoration:none; }
+a:visited  { font-family:굴림,굴림체; font-size:10pt; text-decoration: none; }
+-->
+</STYLE>
+
+
+</HEAD>
+
+
+<BODY BGCOLOR="#006699" LINK="#99CCFF" VLINK="#99CCCC" TEXT="#FFFFFF" >
+
+
+
+<center> 
+
+<a href=/admin/><img src='../img/admintitle.gif' border=0></a>
+
+<BR>
+
+
+<?php
+
+
+include"../connect.inc" ;
+
+
+if($mode=='edit' && !$code)
+  {   echo(" <script>
+                window.alert('게시판 CODE 가 필요합니다.')
+                history.go(-1)
+               </script>
+               "); exit;
+  }
+
+
+
+// =============== 새로운  게 시 판 생 성 !!! ========
+if($mode=='up')
+  {
+
+
+  if( !$code ||  !$name  )
+  {   echo(" <script>
+                window.alert('게시판 CODE, 이름은 반드시 필요합니다.')
+                history.go(-1)
+               </script>
+             "); exit;
+  }
+
+   //  존재 여부 검사
+
+  $que2="select code from bbs_info where code='$code' " ;
+
+  $result2=mysql_query($que2,$connect );
+
+  $is_exist = mysql_affected_rows();
+
+ if($is_exist>0)
+  {   echo(" <script>
+                window.alert('게시판 CODE 가 이미 사용중입니다.\\n다른 CODE를 사용하세요')
+                history.go(-1)
+               </script>
+             "); exit;
+  }
+
+
+
+  
+
+
+
+
+  if( !$scale)
+  {   $scale = 10 ; }
+
+  if( !$page_scale)
+  {   $page_scale = 10 ; }
+
+
+  if( $use_new && !$new_time   )
+  {   echo(" <script>
+                window.alert('\'new\'표시를 사용하려면 표시시간이 필요합니다. ')
+                history.go(-1)
+               </script>
+               "); exit;
+  }
+
+
+  if( $use_cool &&  !$no_cool   )
+  {   echo(" <script>
+                window.alert('\'cool\'표시를 사용하려면 최소조회수가 필요합니다. ')
+                history.go(-1)
+               </script>
+               "); exit;
+  }
+
+
+
+
+  if( $mail_notice &&  !$admin_mail   )
+  {   echo(" <script>
+                window.alert(' 게시물 알림 기능을 사용하려면 관리자의 Email을 입력하세요 ')
+                history.go(-1)
+               </script>
+               "); exit;
+  }
+
+
+
+  if( !$admin_id ||  !$admin_pw   )
+  {   echo(" <script>
+                window.alert('관리자의 아이디,암호가 필요합니다!')
+                history.go(-1)
+               </script>
+               "); exit;
+  }
+
+
+$head = addslashes($head) ;   // ' 를 \'로 바꿔준다
+$foot   = addslashes($foot) ;  
+
+
+
+  $que1="insert into bbs_info values('$code', '$name', '$title', '$head', '$foot',
+         '$use_file', $scale  ,  $page_scale  , '$use_new'  , $new_time  , '$use_cool'  ,  
+         $no_cool    ,  '$admin_id'   , '$admin_pw'   , '$mail_notice',  '$admin_mail' ,now() ,
+		 '$use_auth' , '$auth_id'  , '$auth_pw' )" ;
+ 
+
+//  echo("$que1") ;
+
+  $result1=mysql_query($que1,$connect );
+
+  $que2="
+create table $code(
+id int auto_increment primary key,
+name char(30),
+mail varchar(40),
+home varchar(40),
+title varchar(80),
+body text,
+reg_date datetime,
+count int,
+thread int,
+depth smallint,
+pos int,
+passwd char(8),
+user_file varchar(50),
+user_ip char(20)
+)
+" ;
+
+// echo $que2 ;
+ 
+ $result2=mysql_query($que2,$connect );
+
+
+
+
+  $que3="insert into $code values ('','관리툴','loveme@ditco.com',
+'loveme.ditco.com','설치완료!','loveme  Free BBS 설치가 성공적으로 완료 되었습니다.'
+,now(),1,1,1,1,'1111','','$REMOTE_ADDR') " ;
+
+//  echo $que3 ;
+ 
+ $result3=mysql_query($que3,$connect );
+
+
+ if($use_file=='y')
+   {
+      if(!file_exists('../'.$code))
+        {   mkdir('../'.$code, 0777); }
+   }
+
+
+     if($result1 && $result2 && $result3)
+               { 
+                echo("<script>
+   					  window.alert('게시판 : $name 이 생성되었습니다!')
+                      </script>");
+               
+             echo("  <meta http-equiv='Refresh' content='0; URL=./index.html'>  ");
+             exit;
+         		}
+            else
+             	{
+               echo("<script>
+   						window.alert('게시판을 만들다가 에러가 발생했습니다!')
+                      	  </script>
+                   ");
+                 echo mysql_error();
+                 exit;
+      	    	}
+
+ 
+
+
+   
+
+  }
+
+
+
+
+
+
+//===================게시판 수정 올리기 ==============
+
+
+if($mode=='update')
+  {
+$head = addslashes($head);   // ' 를 \'로 바꿔준다
+$foot   = addslashes($foot);  
+
+
+  $que1="update bbs_info set
+	name = '$name', 
+	title = '$title',
+	head        = '$head',
+	foot         = '$foot',
+	use_file = '$use_file',
+	scale        = $scale  ,     
+	page_scale   = $page_scale  ,
+	use_new     = '$use_new'  , 
+	new_time    = $new_time  , 
+	use_cool     = '$use_cool'  ,  
+	no_cool      = $no_cool    , 
+	admin_id    = '$admin_id'   ,
+	admin_pw    = '$admin_pw'   ,
+	mail_notice  = '$mail_notice', 
+	admin_mail  = '$admin_mail' ,
+	use_auth     = '$use_auth'  , 
+	auth_id     = '$auth_id'  , 
+	auth_pw     = '$auth_pw'   
+    where code='$code'" ;
+
+//echo("$que1") ;
+
+  $result=mysql_query($que1,$connect );
+
+
+
+ if($use_file=='y')
+   {
+      if(!file_exists('../'.$code))
+        {   mkdir('../'.$code, 0777); }
+   }
+
+
+
+           if($result)
+               { 
+               echo("  <meta http-equiv='Refresh' content='0; URL=./bbs_view.html?mode=view&code=$code'>  ");
+               exit;
+         		}
+            else
+             	{
+               echo("<script>
+   						window.alert('이크! 수정중 에러가 발생했습니다!')
+                        history.go(-1)
+	                 </script>
+                   ");
+                 exit;
+      	    	}
+
+
+  
+
+  
+
+  }
+
+
+
+// ======================= 새 게 시 판 폼 ===============
+
+
+
+if($mode=='new')
+{
+
+  
+echo("
+
+<form action='$PHP_SELF' method=post>
+<input  type=hidden name=mode value='up'>
+
+	
+<table width=620  cellspacing=0 cellpadding=3 border=0>
+<tr>
+<td bgcolor=#113366 align=left width=310><font color=white><b> 새로운 게시판 생성</b></font></td>
+</tr>
+</table>
+
+
+<table width=620 cellspacing=0 cellpadding=0 border=0>
+<td bgcolor=#bbbbbb>
+
+	<table width=618 cellspacing=1 cellpadding=10 border=0>
+
+
+         <tr>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>CODE</td>
+              <td  colspan=7 bgcolor=#006699 ><font face='굴림체' size=2><input type=text value='' size=10 name=code> 8자리 이내 영문</td>
+         </tr>
+
+
+       	 <tr>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>BBS이름</td>
+              <td  colspan=7 bgcolor=#006699 ><font face='굴림체' size=2><input type=text value='' size=30 name=name></td>
+         </tr>
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>타이틀</td>
+              <td  colspan=7 bgcolor=#006699 ><font face='굴림체' size=2><input type=text value='' size=55 name=title> </td>
+         </tr>
+
+
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=80><font face='굴림체' size=2>&nbsp;</td>
+              <td bgcolor=#006699  width=30><font face='굴림체' size=2>&nbsp;</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>File업로드</td>
+              <td bgcolor=#006699 width=40><font face='굴림체' size=2>");
+
+echo("<INPUT TYPE=CHECKBOX NAME=use_file VALUE='y' >"); 
+
+
+echo("</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>줄수/화면</td>
+              <td bgcolor=#006699 width=30><font face='굴림체' size=2><input type=text value='10' size=2 name=scale></td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>Page/화면</td>
+              <td bgcolor=#006699 width=40><font face='굴림체' size=2><input type=text value='10' size=2 name=page_scale></td>
+
+         </tr>
+
+ 
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=80><font face='굴림체' size=2>'NEW'사용</td>
+              <td bgcolor=#006699  width=30><font face='굴림체' size=2>");
+
+
+ echo("<INPUT TYPE=CHECKBOX NAME=use_new VALUE='y' CHECKED>"); 
+
+echo("
+</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>'NEW'표시</td>
+              <td bgcolor=#006699 width=70><font face='굴림체' size=2><input type=text value='24' size=2 name=new_time> 시간</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>'COOL'사용</td>
+              <td bgcolor=#006699 width=30><font face='굴림체' size=2>");
+
+
+ echo("<INPUT TYPE=CHECKBOX NAME=use_cool VALUE='y' CHECKED>"); 
+
+
+echo("</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>COOL표시</td>
+              <td bgcolor=#006699 width=70><font face='굴림체' size=2><input type=text value='30' size=2 name=no_cool> 회</td>
+
+         </tr>
+
+
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>새글알림</td>
+              <td bgcolor=#006699  width=30><font face='굴림체' size=2>");
+
+ echo("<INPUT TYPE=CHECKBOX NAME=mail_notice VALUE='y' >"); 
+
+
+echo("</td>
+              <td  bgcolor='#5485B6' width=70><font face='굴림체' size=2>E-mail</td>
+              <td colspan=5 bgcolor=#006699 width=60><font face='굴림체' size=2><input type=text value='yourmail@yoururl.com' size=24 name=admin_mail></td>
+         </tr>
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>Admin ID</td>
+              <td colspan=3 bgcolor=#006699  width=30><font face='굴림체' size=2><input type=text value='' size=10 name=admin_id></td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>Admin 암호</td>
+              <td colspan=3 bgcolor=#006699 width=40><font face='굴림체' size=2><input type=text value='' size=8 name=admin_pw></td>
+              
+         </tr>
+		 
+		 
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>유저인증</td>
+              <td bgcolor=#006699  width=30><font face='굴림체' size=2>");
+
+	 echo("<INPUT TYPE=CHECKBOX NAME=use_auth VALUE='y' >"); 
+
+
+	echo("</td>
+           <td  bgcolor='#5485B6' width=70><font face='굴림체' size=2>ID</td>
+           <td colspan=2 bgcolor=#006699 width=60><font face='굴림체' size=2><input type=text  size=10 name=auth_id></td>
+
+		   <td  bgcolor='#5485B6' width=70><font face='굴림체' size=2>암호</td>
+           <td colspan=2 bgcolor=#006699 width=60><font face='굴림체' size=2><input type=text  size=10 name=auth_pw></td>
+         </tr>
+
+		 
+		 ");
+
+
+
+    $row[head]=
+"<HTML>
+<HEAD>
+<TITLE>loveme's Free BBS</TITLE>
+<STYLE TYPE=text/css>
+<!--
+td	{ font-family:굴림체,굴림;font-size:10pt}
+a:link	{ font-family:굴림,굴림체; font-size:10pt;color:#003355; text-decoration:none; }
+a:visited  { font-family:굴림,굴림체; font-size:10pt; text-decoration: none; }
+-->
+</STYLE>
+</HEAD>
+<BODY BGCOLOR='#006699' LINK='#99CCFF' VLINK='#99CCCC' TEXT='#FFFFFF' >
+<center>
+<img src=./img/bbstitle.gif border=0 >
+<BR>"   ;
+
+  $row[foot]=" 
+</center>
+</body>
+</html>"   ;
+
+
+    	 echo("<tr>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>Header</td>
+              <td  colspan=7 bgcolor=#006699 ><font face='굴림체' size=2><TEXTAREA NAME=head ROWS=10 COLS=65>$row[head]
+</TEXTAREA>
+
+</td>
+         </tr>
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>Footer</td>
+              <td  colspan=7 bgcolor=#006699 ><font face='굴림체' size=2><TEXTAREA NAME=foot ROWS=10 COLS=65>$row[foot]
+</TEXTAREA></td>
+         </tr>
+
+
+
+    </table>
+</td>
+</table>
+
+<input type=submit value='게시판 생성'>
+</form>
+</center> ");
+
+}
+
+
+
+//========================= 수 정 모 드  폼 ===============
+if($mode=='edit')
+{
+
+//----------------- 수정하려는 게 시 판  정보 가져오기 -------------
+  $que1="select * from bbs_info where code='$code'" ;
+  $result=mysql_query($que1,$connect );
+  $row=mysql_fetch_array($result);
+  $this_date=$row[reg_date];
+
+
+  $row[head]= stripslashes($row[head]) ;
+  $row[foot]= stripslashes($row[foot]) ;
+
+
+  $que5="select  DATE_FORMAT(reg_date,'Y-m-d') from bbs_info where code='$code'" ;
+  $result=mysql_query($que5,$connect );
+  $row5=mysql_fetch_array($result);
+  $row[reg_date]=$row5[0] ;
+ 
+
+   
+echo("
+
+<form action='$PHP_SELF' method=post>
+<input  type=hidden name=code value='$code'>
+<input  type=hidden name=mode value='update'>
+
+
+	
+<table width=620  cellspacing=0 cellpadding=3 border=0>
+<tr>
+<td bgcolor=#113366 align=left width=310><font color=white><b> $row[name]</b></font></td>
+
+<td bgcolor=#113366 align=right width=310><font color=white>CODE: <b>$row[code]</b></font></td>
+</tr>
+</table>
+
+
+<table width=620 cellspacing=0 cellpadding=0 border=0>
+<td bgcolor=#bbbbbb>
+
+	<table width=618 cellspacing=1 cellpadding=10 border=0>
+
+
+
+       	 <tr>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>이름</td>
+              <td  colspan=7 bgcolor=#006699 ><font face='굴림체' size=2><input type=text value='$row[name]' size=30 name=name></td>
+         </tr>
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>타이틀</td>
+              <td  colspan=7 bgcolor=#006699 ><font face='굴림체' size=2><input type=text value='$row[title]' size=55 name=title></td>
+         </tr>
+
+
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=80><font face='굴림체' size=2> &nbsp;</td>
+              <td bgcolor=#006699  width=30><font face='굴림체' size=2> &nbsp;</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>File업로드</td>
+              <td bgcolor=#006699 width=40><font face='굴림체' size=2>");
+
+if($row[use_file]=='y')
+ { echo("<INPUT TYPE=CHECKBOX NAME=use_file VALUE='y' CHECKED>"); }
+else
+ { echo("<INPUT TYPE=CHECKBOX NAME=use_file VALUE='y' >"); }
+
+
+echo("</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>줄수/화면</td>
+              <td bgcolor=#006699 width=30><font face='굴림체' size=2><input type=text value='$row[scale]' size=2 name=scale></td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>Page/화면</td>
+              <td bgcolor=#006699 width=40><font face='굴림체' size=2><input type=text value='$row[page_scale]' size=2 name=page_scale></td>
+
+         </tr>
+
+ 
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=80><font face='굴림체' size=2>'NEW'사용</td>
+              <td bgcolor=#006699  width=30><font face='굴림체' size=2>");
+
+if($row[use_new]=='y')
+ { echo("<INPUT TYPE=CHECKBOX NAME=use_new VALUE='y' CHECKED>"); }
+else
+ { echo("<INPUT TYPE=CHECKBOX NAME=use_new VALUE='y' >"); }
+
+
+echo("
+</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>'NEW'표시</td>
+              <td bgcolor=#006699 width=60><font face='굴림체' size=2><input type=text value='$row[new_time]' size=2 name=new_time> 시간</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>'COOL'사용</td>
+              <td bgcolor=#006699 width=30><font face='굴림체' size=2>");
+
+if($row[use_cool]=='y')
+ { echo("<INPUT TYPE=CHECKBOX NAME=use_cool VALUE='y' CHECKED>"); }
+else
+ { echo("<INPUT TYPE=CHECKBOX NAME=use_cool VALUE='y' >"); }
+
+
+echo("</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>COOL표시</td>
+              <td bgcolor=#006699 width=70><font face='굴림체' size=2><input type=text value='$row[no_cool]' size=2 name=no_cool> 회</td>
+
+         </tr>
+
+
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>새글알림</td>
+              <td bgcolor=#006699  width=30><font face='굴림체' size=2>");
+
+if($row[mail_notice]=='y')
+ { echo("<INPUT TYPE=CHECKBOX NAME=mail_notice VALUE='y' CHECKED>"); }
+else
+ { echo("<INPUT TYPE=CHECKBOX NAME=mail_notice VALUE='y' >"); }
+
+
+echo("</td>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>E-mail</td>
+              <td colspan=2 bgcolor=#006699 width=60><font face='굴림체' size=2><input type=text value='$row[admin_mail]' size=24 name=admin_mail></td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>등록일</td>
+              <td colspan=2 bgcolor=#006699 width=80><font face='굴림체' size=2>$row[reg_date]</td>
+         </tr>
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>Admin ID</td>
+              <td colspan=3 bgcolor=#006699  width=30><font face='굴림체' size=2><input type=text value='$row[admin_id]' size=10 name=admin_id></td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>Admin 암호</td>
+              <td colspan=3 bgcolor=#006699 width=40><font face='굴림체' size=2><input type=text value='$row[admin_pw]' size=8 name=admin_pw></td>
+              
+         </tr>
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>유저인증</td>
+              <td bgcolor=#006699  width=30><font face='굴림체' size=2>");
+
+	if($row[use_auth])	{ echo("<INPUT TYPE=CHECKBOX NAME=use_auth VALUE='y' checked >");  }
+	else				{ echo("<INPUT TYPE=CHECKBOX NAME=use_auth VALUE='y' >");  }
+
+
+ 	echo("</td>
+           <td  bgcolor='#5485B6' width=70><font face='굴림체' size=2>ID</td>
+           <td colspan=2 bgcolor=#006699 width=60><font face='굴림체' size=2><input type=text  size=10 name=auth_id value='$row[auth_id]'></td>
+
+		   <td  bgcolor='#5485B6' width=70><font face='굴림체' size=2>암호</td>
+           <td colspan=2 bgcolor=#006699 width=60><font face='굴림체' size=2><input type=text  size=10 name=auth_pw value='$row[auth_pw]'></td>         </tr>
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>Header</td>
+              <td  colspan=7 bgcolor=#006699 ><font face='굴림체' size=2><TEXTAREA NAME=head ROWS=10 COLS=65>$row[head]
+</TEXTAREA>
+
+</td>
+         </tr>
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>Footer</td>
+              <td  colspan=7 bgcolor=#006699 ><font face='굴림체' size=2><TEXTAREA NAME=foot ROWS=10 COLS=65>$row[foot]
+</TEXTAREA></td>
+         </tr>
+
+
+
+    </table>
+</td>
+</table>
+
+<input type=submit value='수정완료'>
+</form>
+</center> ");
+
+}
+
+
+?>
+
+</center>
+</BODY>
+</HTML>
+
+

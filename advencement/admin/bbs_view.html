@@ -1,0 +1,324 @@
+<?php
+// ****************************************************************
+//  LICENSE 
+// ****************************************************************
+// Copyright (C) 1999  Jung jinho Seraphino
+// http: //phpschool.com
+// Email : loveme@ditco.com
+//  
+// 이 프로그램은 GNU 센스를
+// GNU General Public License Version 2 를 따릅니다.
+//  
+// 본 라이센스가 소스 상단에 첨부되어 있는 한 
+// 소스의 자유로운 사용 ,수정 , 재배포가 가능합니다.
+//
+// 본 소스자체의 상업적 이용은 금지되어 있으며
+// 이 프로그램의 사용으로 인한  어떠한 피해에도 제작자는 책임이 없음을 
+// 알려드립니다.
+// 
+// *****************************************************************
+?>
+
+
+
+
+
+<HTML>
+<HEAD>
+<TITLE>Loveme's Free  Board Admin TOOL</TITLE>
+
+<meta HTTP-EQUIV=Content-Type content=text/html; charset=euc-kr>
+<STYLE TYPE='text/css'>
+<!--
+td	{ font-family:굴림체,굴림;font-size:10pt}
+a:link	{ font-family:굴림,굴림체; font-size:10pt;color:#003355; text-decoration:none; }
+a:visited  { font-family:굴림,굴림체; font-size:10pt; text-decoration: none; }
+-->
+</STYLE>
+</HEAD>
+
+
+<BODY BGCOLOR="#006699" LINK="#99CCFF" VLINK="#99CCCC" TEXT="#FFFFFF" >
+<center> 
+
+
+<?php
+
+include "../connect.inc" ;
+
+ {
+ echo("	<img src='../img/admintitle.gif' >");
+ }
+
+//===========================게 시 판 지 우 기 ============
+if($mode=='del')
+
+{
+
+//====== 게시판을 지우기 전에 확인!==============
+
+     if(!$code)      
+        {   echo(" <script>
+                window.alert('삭제하려는 게시판 CODE 가 필요합니다.')
+                history.go(-1)
+               </script>
+               "); exit;
+        }
+
+      //  게시물의 숫자를 가져온다
+ 		 $que1="select count(*) from $code" ;
+         $result=mysql_query($que1,$connect );
+  		 $row=mysql_fetch_array($result);
+      
+        echo("<script>
+                  if(confirm('BBS : $code - 현재 $row[0]건의 게시물이 있습니다 삭제할까요?')) 
+		           {
+               			window.location.href='$PHP_SELF?mode=del_ok&code=$code'
+        		   }
+                  else
+                   {
+		                history.go(-1)                  
+                   }  
+             </script>"       ); exit;
+
+
+ 
+
+}
+
+
+
+// ==============   게시판을 진짜루 지우고 디렉토리 삭제  ==============
+
+if($mode=='del_ok'&&$code)
+{
+ 
+
+  		 $que_d="delete from bbs_info where code='$code'" ;
+         $result1=mysql_query($que_d,$connect );
+
+   		 $que_k="drop table $code" ;
+         $result2=mysql_query($que_d,$connect );
+
+
+
+       if(file_exists('../'.$code))
+          {  
+          
+            exec('rm -rf ../'.$code);
+
+            
+          }
+
+
+
+         if($result2&&$result1)
+           { 
+                 echo("  <meta http-equiv='Refresh' content='0; URL=./index.html'>
+    	           "); exit;
+                
+           } 
+      
+    
+    
+
+}
+
+
+
+
+
+
+if($mode=='view')
+{
+
+	if(!$code)
+	  {   echo(" <script>
+                window.alert('게시판 CODE 가 필요합니다.')
+                history.go(-1)
+               </script>
+               "); exit;
+	  }
+
+
+
+
+
+//-----------------게 시 판  정보 가져오기 -------------
+  $que1="select * from bbs_info where code='$code'" ;
+  $result=mysql_query($que1,$connect );
+  $row=mysql_fetch_array($result);
+  $this_date=$row[reg_date];
+
+
+  $row[head]= stripslashes($row[head]) ;
+  $row[foot]= stripslashes($row[foot]) ;
+
+  $row[head]= htmlspecialchars($row[head]) ;
+  $row[foot]= htmlspecialchars($row[foot]) ;
+
+  $row[head]= nl2br($row[head]);
+  $row[foot]= nl2br($row[foot]);
+
+
+  $que5="select  DATE_FORMAT(reg_date,'Y-m-d') from bbs_info where code='$code'" ;
+  $result=mysql_query($que5,$connect );
+  $row5=mysql_fetch_array($result);
+  $row[reg_date]=$row5[0] ;
+
+  
+
+
+
+//---------------- 이 전  게시판  --------	-------------------
+
+
+  $que3="select code from bbs_info where reg_date > '$this_date' order by reg_date limit 1" ;
+  $result3=mysql_query($que3,$connect );
+  $row3=mysql_fetch_array($result3);
+  $p_bbs=$row3[code];
+
+
+
+//---------------- 다 음  게시판  --------	-------------------
+
+
+  $que3="select code from bbs_info where reg_date < '$this_date' order by reg_date  DESC limit 1" ;
+  $result3=mysql_query($que3,$connect );
+  $row3=mysql_fetch_array($result3);
+  $n_bbs=$row3[code];
+
+
+//-----------------------------------------------
+
+
+
+
+
+   
+echo("
+
+
+
+	
+<table width=620  cellspacing=0 cellpadding=3 border=0>
+<tr>
+<td bgcolor=#113366 align=left width=310><font color=white><b> $row[name]</b></font></td>
+
+<td bgcolor=#113366 align=right width=310><font color=white>CODE: <b>$row[code]</b></font></td>
+</tr>
+</table>
+
+
+<table width=620 cellspacing=0 cellpadding=0 border=0>
+<td bgcolor=#bbbbbb>
+
+	<table width=618 cellspacing=1 cellpadding=10 border=0>
+
+    
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>타이틀</td>
+              <td  colspan=7 bgcolor='#006699' ><font face='굴림체' size=2>$row[title]</td>
+         </tr>
+
+
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>&nbsp;</td>
+              <td bgcolor='#006699'  width=30><font face='굴림체' size=2>&nbsp;</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>File업로드</td>
+              <td bgcolor='#006699' width=40><font face='굴림체' size=2>$row[use_file]</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>줄수/화면</td>
+              <td bgcolor='#006699' width=30><font face='굴림체' size=2>$row[scale]</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>Page/화면</td>
+              <td bgcolor='#006699' width=40><font face='굴림체' size=2>$row[page_scale]</td>
+
+         </tr>
+
+ 
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>'NEW'사용</td>
+              <td bgcolor='#006699'  width=30><font face='굴림체' size=2>$row[use_new]</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>'NEW'표시</td>
+              <td bgcolor='#006699' width=60><font face='굴림체' size=2>$row[new_time] 시간</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>'COOL'사용</td>
+              <td bgcolor='#006699' width=30><font face='굴림체' size=2>$row[use_cool]</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>COOL표시</td>
+              <td bgcolor='#006699' width=70><font face='굴림체' size=2>$row[no_cool] 회</td>
+
+         </tr>
+
+
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>새글알림</td>
+              <td bgcolor='#006699'  width=30><font face='굴림체' size=2>$row[mail_notice]</td>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>E-mail</td>
+              <td colspan=2 bgcolor='#006699' width=60><font face='굴림체' size=2>$row[admin_mail]</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>등록일</td>
+              <td colspan=2 bgcolor='#006699' width=80><font face='굴림체' size=2>$row[reg_date]</td>
+         </tr>
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>Admin ID</td>
+              <td colspan=3 bgcolor='#006699'  width=30><font face='굴림체' size=2>$row[admin_id]</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>Admin 암호</td>
+              <td colspan=3 bgcolor='#006699' width=40><font face='굴림체' size=2>$row[admin_pw]</td>
+              
+         </tr>
+
+		 
+    	 <tr>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>사용자인증</td>
+              <td bgcolor='#006699'  width=30><font face='굴림체' size=2>$row[use_auth]</td>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>인증ID</td>
+              <td colspan=2 bgcolor='#006699' width=60><font face='굴림체' size=2>$row[auth_id]</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>암호</td>
+              <td colspan=2 bgcolor='#006699' width=80><font face='굴림체' size=2>$row[auth_pw]</td>
+         </tr>
+
+
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>Header</td>
+              <td  colspan=7 bgcolor='#006699' ><font face='굴림체' size=2>$row[head]</td>
+         </tr>
+
+
+
+    	 <tr>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>Footer</td>
+              <td  colspan=7 bgcolor='#006699' ><font face='굴림체' size=2>$row[foot]</td>
+         </tr>
+
+
+
+    </table>
+</td>
+</table>
+
+<a href=index.html><img src='../img/bbslist.gif' border=0 alt='BBS 목록보기'></a>
+<a href=bbs_new.html?mode=edit&code=$code><img src='../img/bbsedit.gif' border=0 alt='BBS 설정변경'></a>
+<a href=$PHP_SELF"."?mode=del&code=$code><img src='../img/bbsdel.gif' border=0 alt='BBS 삭제'></a>
+
+ ");
+}
+
+?>
+
+
+</center>
+</BODY>
+</HTML>
+
+

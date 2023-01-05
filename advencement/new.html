@@ -1,0 +1,930 @@
+<?php
+// ****************************************************************
+//  LICENSE 
+// ****************************************************************
+// Copyright (C) 1999  Jung jinho Seraphino
+// http: //phpschool.com
+// Email : loveme@ditco.com
+//  
+// 이 프로그램은 GNU 센스를
+// GNU General Public License Version 2 를 따릅니다.
+//  
+// 본 라이센스가 소스 상단에 첨부되어 있는 한 
+// 소스의 자유로운 사용 ,수정 , 재배포가 가능합니다.
+//
+// 본 소스자체의 상업적 이용은 금지되어 있으며
+// 이 프로그램의 사용으로 인한  어떠한 피해에도 제작자는 책임이 없음을 
+// 알려드립니다.
+// 
+// *****************************************************************
+?>
+
+
+
+<?php
+
+if(!$code)
+  {
+         echo(" <script>
+                  window.alert('게시판의 CODE 가 반드시 필요합니다!')
+                  history.go(-1)
+                 </script>
+               "); exit;
+       
+
+  }
+
+
+include "./connect.inc" ;
+
+
+//  존재하는 게시판인가?
+
+  $que2="select code from bbs_info where code='$code'" ;
+  $result2=mysql_query($que2,$connect );
+  $bbs_ok = mysql_affected_rows();
+ 
+  if(!$bbs_ok)
+    {   echo(" <script>
+                  window.alert('게시판이 존재하지 않습니다.  BBS CODE 를 확인하세요')
+                  history.go(-1)
+                 </script>
+               "); exit;
+    }
+
+
+
+  //=============  BBS 정보를 가져온다 =================
+
+   $que_bbs="select * from bbs_info where code='$code'" ;
+   $result=mysql_query($que_bbs,$connect );
+   $bbs=mysql_fetch_array($result);
+
+
+$bbs[head] = stripslashes($bbs[head]);
+$bbs[foot] = stripslashes($bbs[foot]);
+
+echo("$bbs[head] <br>");
+
+
+
+// ========================== 지 우 기 ==================
+
+if($mode=='del' && $id )
+  { 
+
+ 
+      if(!$passwd)
+
+       {
+
+
+
+			echo("
+		         <br>
+				 <form action='$PHP_SELF' method=post>
+                  <input type=hidden name=code value=$code> 
+                  <input type=hidden name=mode value=$mode> 
+                  <input type=hidden name=id value=$id> 
+                  <input type=hidden name=is_pwd value='1'> 
+
+				<table width=330  cellspacing=0 cellpadding=3 border=0>
+				<tr>
+				<td bgcolor=#113366 align=left width=310><font color=white><b> $bbs[name]</b></font></td>
+
+			<td bgcolor=#113366 align=right width=310><font color=white></b></font></td>
+			</tr>
+			</table>
+
+			<table width=330 cellspacing=0 cellpadding=0 border=0>
+			<td >
+
+			<table width=328 cellspacing=1 cellpadding=10 border=0>
+
+    		 <tr>	
+            	  <td bgcolor='#5485B6' width=100><font face='굴림체' size=2>Password</td>
+              	<td  width=300> <font face='굴림체' size=2>
+             	<input type=password   name=passwd size=10>
+              	<input type=image src='./img/search.gif' align=absmiddle>
+       	      </td>
+        	 </tr>
+
+		    </table>
+		</td>
+		</table>
+		</form> ");
+           
+        }
+       
+      else
+       { 
+         
+                         //화일을 먼저 지우자  
+                        
+                        $que1="select user_file from $code where id=$id and passwd='$passwd'" ;
+						
+						// echo ("$que1<br>");
+
+				         $result= mysql_query($que1,$connect );
+                         $row = mysql_fetch_array($result);
+                         if($row[user_file])
+                           {
+                            unlink($row[user_file]);
+                            echo("$row[user_file] 을 지웠다");
+                           } 
+
+
+		//  지운다.
+         $que1="delete from $code where id=$id and passwd='$passwd' " ;
+		 					//	echo ("$que1<br>");
+         mysql_query($que1,$connect );
+         $del_ok = mysql_affected_rows();
+
+
+
+
+
+         if(!$del_ok)
+            {
+              //  자 관리자 암호로 지우자
+                    
+                    $que1="select admin_pw from bbs_info where code='$code' and admin_pw='$passwd' " ;
+
+					// echo ( "$que1<br>");
+
+                    $result=mysql_query($que1,$connect );
+
+                    $admin_ok = mysql_affected_rows();
+                
+                    if($admin_ok)
+                    {     
+                         //화일을 먼저 지우자  
+                        
+                         $que1="select user_file from $code where id=$id " ;
+
+												//	echo ("$que1<br>");
+
+				         $result= mysql_query($que1,$connect );
+                         $row = mysql_fetch_array($result);
+                         if($row[user_file])
+                           {
+                            @unlink($row[user_file]);
+                            //echo("$row[user_file] 을 지웠다");
+                           } 
+			
+				         $que1="delete from $code where id=$id " ;
+				         mysql_query($que1,$connect );
+				         $del_ok = mysql_affected_rows();
+
+                        		 					//	echo ("$que1<br>");
+
+                
+                    }
+
+
+             }
+         
+          // exit ;
+        
+           if($del_ok)
+               { 
+               echo("  <meta http-equiv='Refresh' content='0; URL=./board.html?code=$code'>  ");
+               exit;
+         		}
+            else
+             	{
+               echo("
+
+                
+                     <script>
+   						window.alert('이크! 암호가 틀려 지울수가 없어요! ')
+                        window.history.go(-1)
+	                 </script>
+                   ");
+                 exit;
+      	    	}
+
+   
+       
+        }
+    
+
+
+  }
+
+
+
+
+
+
+
+?>
+
+
+<?php
+
+// ============================  새 글 올리기 =======================
+if($mode=='up')
+  {
+
+    if(!$title || !$body || !$name )
+       {   echo(" <script>
+                  window.alert('이름, 제목, 내용을 입력해 주세요 !')
+                  history.go(-1)
+                 </script>
+               "); exit;
+       }
+
+   
+    if(!$passwd)
+       {   echo(" <script>
+                  window.alert('\\n[ 암호필요! ] \\n이글을 고치거나 지우기 위해서는 \\n반드시 암호가 필요합니다 ')
+                  history.go(-1)
+                 </script>
+               "); exit;
+       }
+
+
+ $file_name = substr( strrchr($up_file_name,"."),1);
+ if ($file_name==php3 || $file_name==html || $file_name==php || $file_name==phtml || $file_name==inc)
+ {
+       echo ("
+               <script>
+            window.alert('확장자가 PHP 스크립트로 등록된 파일은 첨부 할 수 없습니다.')
+            history.go(-1)
+            </script>
+           ");
+           exit;
+ }
+
+
+
+if($usetag)
+    {
+
+	}
+	else
+	{
+ $body = htmlspecialchars($body) ;
+     $body = nl2br($body);
+	}
+
+
+       // LOCK을 건다.
+     $que1=" LOCK TABLES  $code WRITE" ;
+     mysql_query($que1,$connect );
+
+
+   //---------------  입력가능한 값으로 변환 --------------
+     $title = addslashes($title);
+	 $body = addslashes($body);
+   //------------------------------------------------------
+
+
+
+    // ------------  쓰레드 찾기 ---------
+
+
+   $que1="select MAX(thread) from $code" ;
+   $result=mysql_query($que1,$connect );
+   $row=mysql_fetch_array($result);
+   $thread=$row[0]+1;
+
+
+
+    // ------------  포지션 찾기 ---------
+
+   $que1="select MIN(pos) from $code" ;
+   $result=mysql_query($que1,$connect );
+   $row=mysql_fetch_array($result);
+   $pos=$row[0]+1;
+
+
+
+
+    // ------   먼저 포지션을 모두 올려 놓는다 ----------
+
+
+         mysql_query("update $code set pos=pos+1 where pos>0");
+
+
+if($bbs[use_file] && $up_file_name)
+  {
+
+//      echo(" up_file :$up_file");
+//      echo(" up_file_name : $up_file_name");
+
+
+      if(!filetype("./".$code))
+        { if(!@mkdir("./".$code,0777)) 
+             {
+              echo "디렉토리를 만들수 없습니다.- check permissions<br>\n";
+              exit;
+             }
+            
+         }            
+      
+     $up_file_name  = ereg_replace(" ","",$up_file_name);
+
+     $dest = "./$code/$up_file_name";
+
+  //   echo("저장화일 : $dest ");
+
+     if(@exec("cp $up_file $dest")!=0)
+        {
+        echo " $dest 를 만들수 없네! - check permissions<br>\n";
+        exit;
+        }
+    
+       unlink($up_file);
+
+  }
+
+
+          	// ================= 게시물 알림 기능 ======================
+
+			 if($bbs[mail_notice]=='y')
+		   { 
+               $body_trim = eregi_replace("<br>","",$body);
+
+		       $to = $bbs[admin_mail] ;
+
+			   // echo"받는이 :  $to" ; exit ;
+
+		       $sub= " $bbs[name]에 새로운 게시물이 등록되었습니다"  ;
+               $mail_body = "
+$bbs[name] - 새로운 게시물이 등록되었습니다\n\n제목 : $title \n 이름 : $name \n 내용 : $body_trim \n\n 
+$bbs[name] : http://sera.ditco.com/php_loveme/html/board.html?code=phpqna ";
+
+               mail("$to", "$sub", "$mail_body", "from:PHP3BBS@sera.ditco.com");
+
+           }
+
+
+     $result=mysql_query("insert into $code values ('','$name','$mail',
+'$home','$title','$body',now(),1,$thread,1,1,'$passwd','$dest','$REMOTE_ADDR')");
+
+
+		 // LOCK을 푼다.
+          $que1=" UNLOCK TABLES " ;
+          mysql_query($que1,$connect );
+
+
+     if($result)
+         {
+      
+         echo("<meta http-equiv='Refresh' content='0; URL=./board.html?code=$code'>");
+         exit;
+         }
+      else  
+         {
+          echo("<script name=javascript>  
+                 window.alert('읔! 새글 입력 중 오류가 발생했습니다.');
+                 history.go(-1)
+                </script>");exit;
+            
+         }
+
+
+
+  }
+
+// ============================  응답 글 올리기 =======================
+if($mode=='re_up')
+  {
+    if(!$title || !$body || !$name)
+       {   echo(" <script>
+                  window.alert(' 이름, 제목, 내용을 입력해 주세요 !')
+                  history.go(-1)
+                 </script>
+               "); exit;
+       }
+
+    if(!$passwd)
+       {   echo(" <script>
+                  window.alert('\\n[ 암호필요! ] \\n이글을 고치거나 지우기 위해서는 \\n반드시 암호가 필요합니다 ')
+                  history.go(-1)
+                 </script>
+               "); exit;
+       }
+
+   
+
+if($usetag)
+    {
+
+
+	}
+	else
+	{
+ $body = htmlspecialchars($body) ;
+     $body = nl2br($body);
+	}
+
+       // LOCK을 건다.
+     $que1=" LOCK TABLES  $code WRITE" ;
+     mysql_query($que1,$connect );
+
+
+   //---------------  입력가능한 값으로 변환 --------------
+     $title = addslashes($title);
+	 $body = addslashes($body);
+   //------------------------------------------------------
+    
+
+    // ------   먼저 포지션을 모두 올려 놓는다 ----------
+
+
+     mysql_query("update $code set pos=pos+1 where pos>=$pos");
+
+  
+
+
+
+if($bbs[use_file] && $up_file_name)
+  {
+
+      if(!filetype("./".$code))
+        { if(!@mkdir("./".$code,0777)) 
+             {
+              echo "디렉토리를 만들수 없습니다.- check permissions<br>\n";
+              exit;
+             }
+            
+         }            
+      
+     $up_file_name  = ereg_replace(" ","",$up_file_name);
+
+     $dest = "./$code/$up_file_name";
+
+//     echo("저장화일 : $dest ");
+
+     if(@exec("cp $up_file $dest")!=0)
+        {
+        echo " $dest 를 만들수 없네! - check permissions<br>\n";
+        exit;
+        }
+    
+       unlink($up_file);
+
+  }
+  
+
+          	// ================= 게시물 알림 기능 ======================
+
+			 if($bbs[mail_notice]=='y')
+		   {   $body_trim = eregi_replace("<br>","",$body);
+
+		       $to = "$bbs[admin_mail]" ;
+		       $sub= "$bbs[name] 에 새로운 게시물이 등록되었습니다"  ;
+               $mail_body = "$bbs[name]에 새로운 게시물이 등록되었습니다\n\n제목 : $title \n 이름 : $name \n 내용 : $body_trim \n\n $bbs[name] : http://sera.ditco.com/admin/ ";
+
+               mail("$to", "$sub", "$mail_body", "from:BBS-magager@linux.ditco.com");
+
+           }
+
+
+
+
+     $result=mysql_query("insert into $code values ('','$name','$mail',
+'$home','$title','$body',now(),1,$thread,$depth,$pos,'$passwd','$dest','$REMOTE_ADDR')");
+
+		 // LOCK을 푼다.
+          $que1=" UNLOCK TABLES " ;
+          mysql_query($que1,$connect );
+
+
+     if($result)
+         {
+          echo("
+
+        <meta http-equiv='Refresh' content='0; URL=./board.html?code=$code'>
+
+             ");
+            
+         }
+      else  
+         {
+          echo("<script name=javascript>  
+                 window.alert('읔! 응답글 입력 중 오류가 발생했습니다.');
+                history.go(-1)
+                </script>
+				");
+				
+            				
+				exit;
+            
+         }
+
+
+
+
+  }
+
+
+
+
+// ============================  글 수정 =======================
+if($mode=='update')
+  {
+    
+
+    if(!$title || !$body || !$name)
+       {   echo(" <script>
+                  window.alert('부탁이예요! 이름, 제목, 내용을 입력해 주세요 !')
+                  history.go(-1)
+                 </script>
+               "); exit;
+       }
+
+
+    if(!$passwd)
+       {   echo(" <script>
+                  window.alert('\\n[ 암호필요! ] \\n이글을 고치거나 지우기 위해서는 \\n반드시 암호가 필요합니다 ')
+                  history.go(-1)
+                 </script>
+               "); exit;
+       }
+
+
+
+if($usetag)
+    {
+
+
+	}
+	else
+	{
+ $body = htmlspecialchars($body) ;
+     $body = nl2br($body);
+	}
+
+
+
+   //---------------  입력가능한 값으로 변환 --------------
+     $title = addslashes($title);
+	 $body = addslashes($body);
+   //------------------------------------------------------
+
+
+
+
+     $que1="update $code set name='$name', mail='$mail',
+home='$home',title='$title',body='$body',reg_date=now() , passwd='$passwd' where id=$id" ;
+     $result=mysql_query($que1,$connect );
+
+
+  
+    
+
+
+     if($result)
+         {
+          echo("
+
+        <meta http-equiv='Refresh' content='0; URL=./board.html?code=$code'>
+
+             ");
+            
+         }
+      else  
+         {
+          echo("<script name=javascript>  
+                 window.alert('읔! 내용 변경중 중 오류가 발생했습니다.');
+//               history.go(-1)
+                </script>");exit;
+            
+         }
+
+
+
+
+  }
+//=========================== 수정끝 ========================
+
+
+
+
+
+
+
+
+// ==========================  응 답 폼 ================
+
+if($mode=='re')
+  {
+    if(!$id)
+       {   echo(" <script>
+                  window.alert('글번호가 필요합니다')
+                  history.go(-1)
+                 </script>
+               "); exit;
+       }
+   
+
+  $que1="select name,title,thread,pos,depth,body from $code where id=$id" ;
+
+  $result=mysql_query($que1,$connect );
+  $row=mysql_fetch_array($result);
+
+	$p_pos = $row[pos] ;
+	$p_thread= $row[thread] ;
+	$p_depth= $row[depth];
+
+	$thread= $row[thread] ;
+	$depth= $row[depth] +1;
+
+
+  $que2="select count(*) from $code where thread=$thread and depth > $p_depth" ;
+  $result2=mysql_query($que2,$connect );
+  $row2=mysql_fetch_array($result2);
+
+	$plus_pos = $row2[0] ;
+	$pos = $row[pos] + $plus_pos + 1 ;
+
+
+
+
+   //--------------- 가져온 글을 수정 가능한 값으로 변환 --------------
+      $row[body] = stripslashes($row[body]);
+      $row[body] = eregi_replace("<br>","",$row[body]);
+      $row[body] = eregi_replace("\"","＇",$row[body]);
+      $row[body] = eregi_replace("\'","＇",$row[body]);
+
+
+      $row[body]="\n\n".$row[name]."님의 글\n------------------------------------\n".$row[body]."\n------------------------------------\n";
+   //------------------------------------------------------
+    
+echo(" 
+    	<form name=form ENCTYPE=multipart/form-data action='$PHP_SELF' method='POST'>
+    	<input type=hidden name='mode' value='re_up'>
+    	<input type=hidden name='pos' value='$pos'>
+    	<input type=hidden name='thread' value='$thread'>
+    	<input type=hidden name='code' value='$code'>
+    	<input type=hidden name='depth' value='$depth'>
+        <input type='Hidden' name='hide' value=\"$row[body]\">
+
+	    <table border='0' cellpadding='3'>
+
+	    <tr>
+	      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>이름</font></td>
+	      <td ><input size='15'  name='name' value=''></td>
+    	  <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>암호</font></td>
+      	<td ><input size='8' maxlength='8' type=password name='passwd' value='$row[passwd]'><FONT SIZE=2 COLOR=#FFEBDF>삭제,수정시 필요</FONT></td>
+
+    </tr>
+
+    <tr>
+      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>제목</font>     
+</td>
+      <td  colspan=3><input size='40'  name='title' value='[응답]$row[title]'>     <input type='Button' name='quote' value='본문 인용' onClick=\"this.form.body.value=this.form.body.value + this.form.hide.value;\"></td>
+    </tr>
+    <tr>
+      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>전자우편</font></td>
+      <td  colspan=3><input size='30' maxlength='40' name='mail' value='$row[mail]'></td>
+    </tr>
+
+	
+    <tr>
+      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>홈페이지</font></td>
+      <td  colspan=1>HTTP://<input size='23' maxlength='40' name='home'></td>
+      <td bgcolor='#5485B6' colspan=2><input type=checkbox name='usetag' value='Y'> HTML Tag 사용</td>
+    </tr>
+
+
+
+    <tr>
+      <td valign='top' bgcolor='#5485B6'><font color='#DCE8F3' size='2'>내용</font></td>
+      <td  colspan=3><textarea name='body' rows='17' cols='70'></textarea></td>
+    </tr>");
+
+
+ if($bbs[use_file]=='y')
+   { echo(" <tr>
+      <td valign='top' bgcolor='#5485B6'><font color='#DCE8F3' size='2'>첨부파일</font></td>
+      <td  colspan=3><input type=file name='up_file' size=40></td>
+    </tr>");
+   }
+
+echo("
+  </table>
+
+  <CENTER><input type='submit' value='응답글 올리기'> </CENTER>
+
+	</form> ");
+
+    
+
+
+
+
+  }
+//===========================  응답폼 끝! ========================
+
+
+
+
+
+
+// ==========================  글  수 정 폼 ================
+
+if($mode=='edit')
+  {
+       if(!$id)
+        {   echo(" <script>
+                  window.alert('글번호가 필요합니다')
+                  history.go(-1)
+                 </script>
+               "); exit;
+        }
+
+
+       if(!$passwd)
+
+          {
+
+		echo("
+				  <br>
+				  <form action='$PHP_SELF' method=post>
+                  <input type=hidden name=mode value=$mode> 
+                  <input type=hidden name=code value=$code> 
+                  <input type=hidden name=id value=$id> 
+
+				<table width=330  cellspacing=0 cellpadding=3 border=0>
+				<tr>
+				<td bgcolor=#113366 align=left width=310><font color=white><b> $bbs[name]</b></font></td>
+
+			<td bgcolor=#113366 align=right width=310><font color=white></b></font></td>
+			</tr>
+			</table>
+
+			<table width=330 cellspacing=0 cellpadding=0 border=0>
+			<td >
+
+			<table width=328 cellspacing=1 cellpadding=10 border=0>
+
+    		 <tr>
+            	  <td bgcolor='#5485B6' width=100><font face='굴림체' size=2>Password</td>
+              	 <td  width=300> <font face='굴림체' size=2>
+                  <input type=password name=passwd size=8><input type=image src='./img/search.gif' align=absmiddle>
+       	      </td>
+        	 </tr>
+
+		    </table>
+		</td>
+		</table>
+		</form> ");
+
+
+          }
+        else
+          { 
+
+           $que1="select id,passwd,home, title,name,DATE_FORMAT(reg_date,'y/m/d k:i') ,
+                  body,mail from $code where id = $id and passwd='$passwd' " ;
+           // echo $que1 ;
+
+		   $result=mysql_query($que1,$connect );
+
+
+           $edit_ok = mysql_affected_rows();
+         
+        
+            if($edit_ok)
+               { 
+                  $row=mysql_fetch_array($result);
+             
+				//---------------  수정 가능한 값으로 변환 --------------
+			      $row[body] = stripslashes($row[body]);
+			      $row[body] = eregi_replace("<br>","",$row[body]);
+			   //------------------------------------------------------
+    
+			echo("
+			 <form action='$PHP_SELF' method='POST'>
+    		<input type=hidden name='mode' value='update'>
+
+	    	<input type=hidden name='id' value='$id'>
+	    	<input type=hidden name='code' value='$code'>
+		    <table border='0' cellpadding='3'>
+		    <tr>
+	      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>이름</font></td>
+	      <td ><input size='15'  name='name' value='$row[name]'></td>
+    	  <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>암호</font></td>
+      	<td ><input size='8' maxlength='8' type=password name='passwd' value='$row[passwd]'><FONT SIZE=2 COLOR=#FFEBDF>삭제,수정시 필요</FONT></td>
+
+    </tr>
+
+    <tr>
+      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>제목</font></td>
+      <td  colspan=3><input size='40'  name='title' value='$row[title]'></td>
+    </tr>
+    <tr>
+      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>전자우편</font></td>
+      <td  colspan=3><input size='30' maxlength='40' name='mail' value='$row[mail]'></td>
+    </tr>
+
+	
+		<tr>
+      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>홈페이지</font></td>
+      <td  colspan=1>HTTP://<input size='23' maxlength='40' name='home' value=$row[home]></td>
+      <td bgcolor='#5485B6' colspan=2><input type=checkbox name='usetag' value='Y'> HTML Tag 사용</td>
+    </tr>
+    <tr>
+      <td valign='top' bgcolor='#5485B6'><font color='#DCE8F3' size='2'>내용</font></td>
+      <td  colspan=3><textarea name='body' rows='17' cols='70'>$row[body]</textarea></td>
+    </tr>
+  </table>
+
+  <CENTER><input type='submit' value='글을 수정합니다'></CENTER> </p>
+
+	</form> ");
+         		}
+            else
+             	{
+               echo("<script>
+   						window.alert('이크! 암호가 틀려 고칠수가 없어요! ')
+                        window.history.go(-1)
+	                 </script>
+                   ");
+                 exit;
+      	    	}
+
+
+
+    
+ }
+
+
+
+  }
+//===========================수정하기 끝! ========================
+
+
+
+
+//======================== 새  글  올리기 폼 ================
+if(!$mode)
+{
+
+
+
+
+  echo("
+	 <form  ENCTYPE=multipart/form-data action='$PHP_SELF' method='POST'>
+    	<input type=hidden name='mode' value='up'>
+    	<input type=hidden name='code' value='$code'>
+
+
+	    <table border='0' cellpadding='3'>
+	    <tr>
+	      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>이름</font></td>
+	      <td ><input size='15'  name='name'></td>
+    	  <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>암호</font></td>
+      	<td ><input type=password size='8' maxlength='8' name='passwd' ><FONT SIZE=2 COLOR=#FFEBDF>삭제,수정시 필요</FONT></td>
+
+    </tr>
+
+    <tr>
+      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>제목</font></td>
+      <td  colspan=3><input size='40'  name='title'></td>
+    </tr>
+    <tr>
+      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>전자우편</font></td>
+      <td  colspan=3><input size='30' maxlength='40' name='mail'></td>
+    </tr>
+
+	
+	<tr>
+      <td bgcolor='#5485B6'><font color='#DCE8F3' size='2'>홈페이지</font></td>
+      <td  colspan=1>HTTP://<input size='23' maxlength='40' name='home'></td>
+      <td bgcolor='#5485B6' colspan=2><input type=checkbox name='usetag' value='Y'> HTML Tag 사용</td>
+    </tr>
+
+    <tr>
+      <td valign='top' bgcolor='#5485B6'><font color='#DCE8F3' size='2'>내용</font></td>
+      <td  colspan=3><textarea name='body' rows='17' cols='70'></textarea></td>
+    </tr>");
+
+
+ if($bbs[use_file]=='y')
+   { echo(" <tr>
+      <td valign='top' bgcolor='#5485B6'><font color='#DCE8F3' size='2'>첨부파일</font></td>
+      <td  colspan=3><input type=file name='up_file' size=40></td>
+    </tr>");
+   }
+
+
+echo("
+  </table>
+
+  <CENTER><input type='submit' value='글을 올립니다'></CENTER> </p>
+
+	</form> ");
+
+}
+
+
+echo(" $bbs[foot] ");
+
+
+?>

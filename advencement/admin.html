@@ -1,0 +1,401 @@
+<?php
+// ****************************************************************
+//  LICENSE 
+// ****************************************************************
+// Copyright (C) 1999  Jung jinho Seraphino
+// http: //phpschool.com
+// Email : loveme@ditco.com
+//  
+// 이 프로그램은 GNU 센스를
+// GNU General Public License Version 2 를 따릅니다.
+//  
+// 본 라이센스가 소스 상단에 첨부되어 있는 한 
+// 소스의 자유로운 사용 ,수정 , 재배포가 가능합니다.
+//
+// 본 소스자체의 상업적 이용은 금지되어 있으며
+// 이 프로그램의 사용으로 인한  어떠한 피해에도 제작자는 책임이 없음을 
+// 알려드립니다.
+// 
+// *****************************************************************
+?>
+
+
+
+<?php
+
+if(!$code)
+  {
+         echo(" <script>
+                  window.alert('게시판의 CODE 가 반드시 필요합니다!')
+                  history.go(-1)
+                 </script>
+               "); exit;
+ }
+
+
+include "./connect.inc" ;
+
+
+//  존재하는 게시판인가?
+
+  $que2="select code from bbs_info where code='$code'" ;
+  $result2=mysql_query($que2,$connect );
+  $bbs_ok = mysql_affected_rows();
+ 
+  if(!$bbs_ok)
+    {   echo(" <script>
+                  window.alert('게시판이 존재하지 않습니다.  BBS CODE 를 확인하세요')
+                  history.go(-1)
+                 </script>
+               "); exit;
+    }
+
+
+
+echo(" <center>");
+
+  //=============  BBS 정보를 가져온다 =================
+
+   $que_bbs="select * from bbs_info where code='$code'" ;
+
+   $result=mysql_query($que_bbs,$connect );
+   $bbs=mysql_fetch_array($result);
+
+$bbs[head] = stripslashes($bbs[head]);
+$bbs[foot] = stripslashes($bbs[foot]);
+
+
+   echo("$bbs[head]");  // header  출력
+
+
+//===================== 관리자 암호 물어보기==============
+ if(!$admin_pw)
+    {
+   
+   echo("
+
+
+<br><p>
+
+ <form action='$PHP_SELF' method=post>
+ <input type=hidden name=code value=$code> 
+ <input type=hidden name=mode value=check> 
+
+
+<table width=330  cellspacing=0 cellpadding=3 border=0>
+<tr bgcolor=#006699>
+<td bgcolor=#113366 align=left width=310><font color=white><b>$code</b></font></td>
+
+<td bgcolor=#113366 align=right width=310><font color=white>관리자 확인</b></font></td>
+</tr>
+</table>
+
+<table width=330 cellspacing=0 cellpadding=0 border=0>
+<td bgcolor=#bbbbbb>
+
+	<table width=328 cellspacing=1 cellpadding=10 border=0>
+
+    	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=100><font face='굴림체' size=2>관리자 ID</td>
+              <td  width=300> <font face='굴림체' size=3>
+             <input type=text   name=admin_id size=10></font></td>
+         </tr>
+
+
+    	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=100><font face='굴림체' size=2>Password</td>
+              <td  width=300> <font face='굴림체' size=3>
+             <input type=password   name=admin_pw size=10></font>
+              <input type=image src='./img/search.gif' align=absmiddle border=0>
+             </td>
+         </tr>
+
+    </table>
+</td>
+</table>
+
+</form> 
+
+               ");
+
+    }
+
+
+
+//================   관리자 암호검사 =====================
+
+if($mode=='check')
+{
+  $que2="select code from bbs_info where code='$code' and admin_id='$admin_id' and admin_pw='$admin_pw'" ;
+  $result2=mysql_query($que2,$connect );
+  $admin_ok = mysql_affected_rows();
+}
+
+
+if(!$admin_ok && $mode=='check')
+  {
+       echo(" <script>
+                  window.alert('OH! NO,관리자 ID, 암호가 올바르지 않습니다.')
+                  location.href='./board.html?code=$code'
+                 </script>
+              "); exit;
+ 
+   }
+
+
+//  ===========  게시판 설정 변경 =========
+
+if($mode=='update')
+ {
+
+$head=addslashes($head);
+$foot=addslashes($foot);
+
+
+  $que1="update bbs_info set
+	name = '$name', 
+	title = '$title',
+	head        = '$head',
+	foot         = '$foot',
+	scale        = $scale  ,     
+	page_scale   = $page_scale  ,
+	use_new     = '$use_new'  , 
+	new_time    = $new_time  , 
+	use_cool     = '$use_cool'  ,  
+	no_cool      = $no_cool    , 
+	admin_id    = '$admin_id'   ,
+	admin_pw    = '$admin_pw'   ,
+	mail_notice  = '$mail_notice', 
+	admin_mail  = '$admin_mail' ,
+	use_auth     = '$use_auth'  ,  
+	auth_id     = '$auth_id'  ,  
+	auth_pw     = '$auth_pw'  
+    where code='$code'" ;
+
+//echo("$que1") ;
+
+  $result=mysql_query($que1,$connect );
+
+
+           if($result)
+               { 
+               echo("  <meta http-equiv='Refresh' content='0; URL=./board.html?code=$code'>  ");
+               exit;
+         		}
+            else
+             	{
+               echo("<script>
+   						window.alert('이크! 설정 변경중 에러가 발생했습니다!')
+                        history.go(-1)
+	                 </script>
+                   ");
+                 exit;
+      	    	}
+
+
+  
+
+
+ }
+
+
+
+
+
+
+if($admin_ok)
+
+ {
+
+//-----------------게 시 판  정보 가져오기 -------------
+  $que1="select * from bbs_info where code='$code'" ;
+  $result=mysql_query($que1,$connect );
+  $row=mysql_fetch_array($result);
+  $this_date=$row[reg_date];
+
+
+
+
+  $que5="select  DATE_FORMAT(reg_date,'Y-m-d') from bbs_info where code='$code'" ;
+  $result=mysql_query($que5,$connect );
+  $row5=mysql_fetch_array($result);
+  $row[reg_date]=$row5[0] ;
+
+  
+
+$row[head] = stripslashes($row[head]);
+$row[foot] = stripslashes($row[foot]);
+
+  
+
+echo("
+
+<form action='$PHP_SELF' method=post>
+<input  type=hidden name=code value='$code'>
+<input  type=hidden name=mode value='update'>
+
+
+	
+<table width=620  cellspacing=0 cellpadding=3 border=0>
+<tr bgcolor=#006699>
+<td bgcolor=#113366 align=left width=310><font color=white><b> $row[name]</b></font></td>
+
+<td bgcolor=#113366 align=right width=310><font color=white>CODE: <b>$row[code]</b></font></td>
+</tr>
+</table>
+
+
+<table width=620 cellspacing=0 cellpadding=0 border=0>
+<td bgcolor=#bbbbbb>
+
+	<table width=618 cellspacing=1 cellpadding=10 border=0>
+
+
+
+       	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>이름</td>
+              <td  colspan=7  ><font face='굴림체' size=3><input type=text value='$row[name]' size=30 name=name></font></td>
+         </tr>
+
+    	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>타이틀</td>
+              <td  colspan=7  ><font face='굴림체' size=3><input type=text value='$row[title]' size=55 name=title></font></td>
+         </tr>
+
+
+
+
+
+    	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=80><font face='굴림체' size=2>&nbsp;</td>
+              <td   width=30>&nbsp;</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>File업로드</td>
+              <td  width=40><font face='굴림체' size=2>$row[use_file]"); 
+
+ 
+
+
+echo("</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>줄수/화면</td>
+              <td  width=30><font face='굴림체' size=3><input type=text value='$row[scale]' size=2 name=scale></font></td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>Page/화면</td>
+              <td  width=40><font face='굴림체' size=3><input type=text value='$row[page_scale]' size=2 name=page_scale></font></td>
+
+         </tr>
+
+ 
+
+
+    	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=80><font face='굴림체' size=2>'NEW'사용</td>
+              <td   width=30><font face='굴림체' size=2>");
+
+if($row[use_new]=='y')
+ { echo("<INPUT TYPE=CHECKBOX NAME=use_new VALUE='y' CHECKED>"); }
+else
+ { echo("<INPUT TYPE=CHECKBOX NAME=use_new VALUE='y' >"); }
+
+
+echo("
+</td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>'NEW'표시</td>
+              <td  width=60><font face='굴림체' size=3><input type=text value='$row[new_time]' size=2 name=new_time></font> 시간</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>'COOL'사용</td>
+              <td  width=30><font face='굴림체' size=2>");
+
+if($row[use_cool]=='y')
+ { echo("<INPUT TYPE=CHECKBOX NAME=use_cool VALUE='y' CHECKED>"); }
+else
+ { echo("<INPUT TYPE=CHECKBOX NAME=use_cool VALUE='y' >"); }
+
+
+echo("</td>
+              <td bgcolor='#5485B6' width=75><font face='굴림체' size=2>COOL표시</td>
+              <td  width=70><font face='굴림체' size=3><input type=text value='$row[no_cool]' size=2 name=no_cool></font> 회</td>
+
+         </tr>
+
+
+
+
+
+    	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>새글알림</td>
+              <td   width=30><font face='굴림체' size=2>");
+
+if($row[mail_notice]=='y')
+ { echo("<INPUT TYPE=CHECKBOX NAME=mail_notice VALUE='y' CHECKED>"); }
+else
+ { echo("<INPUT TYPE=CHECKBOX NAME=mail_notice VALUE='y' >"); }
+
+
+echo("</td>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>E-mail</td>
+              <td colspan=2  width=60><font face='굴림체' size=3><input type=text value='$row[admin_mail]' size=24 name=admin_mail></font></td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>등록일</td>
+              <td colspan=2  width=80><font face='굴림체' size=2>$row[reg_date]</td>
+         </tr>
+
+
+    	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>Admin ID</td>
+              <td colspan=3   width=30><font face='굴림체' size=3><input type=text value='$row[admin_id]' size=10 name=admin_id></font></td>
+              <td bgcolor='#5485B6' width=60><font face='굴림체' size=2>Admin 암호</td>
+              <td colspan=3  width=40><font face='굴림체' size=3><input type=text value='$row[admin_pw]' size=8 name=admin_pw></font></td>
+              
+         </tr>
+
+
+     	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=70><font face='굴림체' size=2>유저인증</td>
+              <td   width=30><font face='굴림체' size=2>");
+
+	if($row[use_auth])	{ echo("<INPUT TYPE=CHECKBOX NAME=use_auth VALUE='y' checked >");  }
+	else				{ echo("<INPUT TYPE=CHECKBOX NAME=use_auth VALUE='y' >");  }
+
+
+ 	echo("</td>
+           <td  bgcolor='#5485B6' width=70><font face='굴림체' size=2>ID</td>
+           <td colspan=2  width=60><font face='굴림체' size=3><input type=text  size=10 name=auth_id value='$row[auth_id]'></font></td>
+
+		   <td  bgcolor='#5485B6' width=70><font face='굴림체' size=2>암호</td>
+           <td colspan=2  width=60><font face='굴림체' size=3><input type=text  size=10 name=auth_pw value='$row[auth_pw]'></font></td>         </tr>
+
+
+
+
+
+    	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>Header</td>
+              <td  colspan=7  ><font face='굴림체' size=3><TEXTAREA NAME=head ROWS=5 COLS=55>$row[head]
+</TEXTAREA></font>
+
+</td>
+         </tr>
+
+
+
+    	 <tr bgcolor=#006699>
+              <td bgcolor='#5485B6' width=50><font face='굴림체' size=2>Footer</td>
+              <td  colspan=7  ><font face='굴림체' size=3><TEXTAREA NAME=foot ROWS=5 COLS=55>$row[foot]
+</TEXTAREA></font></td>
+         </tr>
+
+
+
+    </table>
+</td>
+</table>
+
+<input type=submit value='수정완료'>
+</form>
+</center> ");
+
+}
+
+
+
+
+?>
+
+
